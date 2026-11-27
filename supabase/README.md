@@ -1,12 +1,14 @@
 # Supabase cloud sync setup
 
-1. Create a Supabase project.
-2. In **SQL Editor**, run [`schema.sql`](./schema.sql). This creates one private itinerary row per authenticated user, enables row-level security, and adds the table to Realtime.
-3. In **Project Settings → API**, copy the Project URL and the **publishable** key into `supabase-config.js` at the project root.
-4. In **Authentication → URL Configuration**, set the published GitHub Pages URL as the Site URL and add it to Redirect URLs. Enable email OTP / magic links.
-5. Publish `index.html`, `supabase-config.js`, and the `supabase/` folder with the normal GitHub Pages workflow.
-6. Open the published page on each device, choose **雲端同步**, and sign in with the same email. The first signed-in device seeds the cloud row from its current browser itinerary; later devices load that row.
+1. Run schema.sql in Supabase SQL Editor. Re-running it updates the access policy and creates the allowlist table.
+2. In SQL Editor, add only approved email addresses to public.tokyo_allowed_emails, for example:
+   insert into public.tokyo_allowed_emails(email) values ('owner@example.com') on conflict do nothing;
+   Replace the example with your approved email. Do not put personal email addresses in public GitHub files.
+3. Disable public signups in Authentication → Settings. The site also requests sign-in without creating new users.
+4. In Authentication → URL Configuration, set the published GitHub Pages URL as the Site URL and add it to Redirect URLs.
+5. Publish index.html, supabase-config.js, and the supabase folder.
+6. On each device, sign in using an existing email that appears in the database allowlist. Users not on the allowlist cannot read or write itinerary rows; editing controls remain hidden unless the authorized session can access the row.
 
-`supabase-config.js` is shipped to browsers. It may contain the Project URL and publishable key only. Never place a secret or service-role key in that file, `index.html`, or GitHub. The SQL policy restricts rows to `auth.uid() = owner_id`.
+supabase-config.js is public and should contain the Project URL and publishable key only. Never put a secret or service_role key there. Database row-level security is the actual access control; the browser UI is only a convenience layer.
 
-When two devices edit the same itinerary at the same time, the most recent save wins. Avoid simultaneous editing to prevent one device's save from replacing the other's.
+Time fields use a time picker and sort in 24-hour order when saved. When two devices edit simultaneously, the most recent save wins.
